@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Top Navigation Tabs -->
+<div class="tab-bar">
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/refresh">🔄 Refresh</a>
+    <a href="/sip">📈 SIP Calculator</a>
+    <a href="/logout">🚪 Logout</a>
+</div>
+
+<!-- Wealth Growth Calculator -->
+<h3>📊 Wealth Growth Calculator</h3>
+<form method="POST" action="/calculate">
+    <select name="symbol" required>
+        <option value="">Select Stock</option>
+        {% for stock in stocks %}
+            <option value="{{ stock.symbol }}">{{ stock.name }} ({{ stock.symbol }})</option>
+        {% endfor %}
+    </select><br>
+
+    <input type="number" name="amount" placeholder="Investment Amount ₹" required><br>
+    <button type="submit">Calculate Growth</button>
+</form>
+
+<!-- Investment Result with Chart -->
+{% if investment %}
+<div class="investment-result">
+    <h4>📈 ₹{{ investment.amount }} invested in {{ investment.symbol }}</h4>
+    <ul>
+        {% for year, value in investment.growth.items() %}
+            <li><strong>Year {{ year }}:</strong> ₹{{ value }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<canvas id="growthChart" width="400" height="250" style="margin: 20px auto; display: block;"></canvas>
+
+<script>
+    const labels = {{ investment.growth.keys()|list }};
+    const values = {{ investment.growth.values()|list }};
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels.map(y => "Year " + y),
+            datasets: [{
+                label: '💹 Investment Value Over Time',
+                data: values,
+                backgroundColor: 'rgba(0, 229, 255, 0.2)',
+                borderColor: '#00e5ff',
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#00e5ff',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 14 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e1e1e',
+                    titleColor: '#00e5ff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#00e5ff',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#ffffff', font: { size: 12 } },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y: {
+                    ticks: { color: '#ffffff', font: { size: 12 } },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+
+<!-- Top 10 Stocks Grid -->
+<h3>🏆 Top 10 Recommended Stocks (Based on ROI)</h3>
+<div class="stock-grid">
+    {% for stock in stocks %}
+    <div class="stock-card">
+        <h3>{{ stock.name }} ({{ stock.symbol }})</h3>
+        <p><strong>Price:</strong> ₹{{ stock.price }}</p>
+        <p><strong>ROI:</strong> {{ stock.roi }}%</p>
+        <p><strong>P/E Ratio:</strong> {{ stock.pe_ratio }}</p>
+        <p><strong>Market Cap:</strong> {{ stock.market_cap }}</p>
+        <p><strong>Sector:</strong> {{ stock.sector }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

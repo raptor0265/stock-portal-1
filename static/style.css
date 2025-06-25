@@ -1,0 +1,132 @@
+body {
+    background: url('/static/bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+
+.tab-bar {
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    font-size: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tab-bar a {
+    color: #00e5ff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.tab-bar a:hover {
+    color: #fff;
+}
+
+/* Welcome & header */
+h2, h3 {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.6);
+    margin: 20px auto;
+    padding: 10px 20px;
+    width: fit-content;
+    border-radius: 10px;
+}
+
+/* Grid layout */
+.stock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Stock card styling */
+.stock-card {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.stock-card:hover {
+    transform: scale(1.03);
+}
+
+.stock-card h3 {
+    color: #00e5ff;
+    margin-bottom: 10px;
+}
+
+.stock-card p {
+    margin: 5px 0;
+}
+
+/* Form styles */
+form {
+    max-width: 400px;
+    margin: 30px auto;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+input, select, button {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+}
+
+button {
+    background-color: #00bcd4;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0097a7;
+}
+
+/* Investment result block */
+.investment-result {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 12px;
+    color: #00e5ff;
+    font-size: 16px;
+    max-width: 500px;
+    margin: 20px auto;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+    line-height: 1.6;
+}
+
+.investment-result h4 {
+    color: #ffffff;
+    text-align: center;
+}
+
+.investment-result ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.investment-result li {
+    padding: 4px 0;
+    font-weight: 500;
+}

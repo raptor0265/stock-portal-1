@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SIP Calculator</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="tab-bar">
+        <a href="/dashboard">🏠 Dashboard</a>
+        <a href="/refresh">🔄 Refresh</a>
+        <a href="/sip">📈 SIP Calculator</a>
+        <a href="/logout">🚪 Logout</a>
+    </div>
+
+    <h2>📈 SIP Investment Calculator</h2>
+
+    <form method="POST" action="/sip">
+        <select name="symbol" required>
+            <option value="">Select Stock</option>
+            {% for stock in stocks %}
+                <option value="{{ stock.symbol }}">{{ stock.name }} ({{ stock.symbol }})</option>
+            {% endfor %}
+        </select><br>
+        <input type="number" name="monthly" placeholder="Monthly SIP ₹" required><br>
+        <input type="number" name="years" placeholder="Investment Duration (Years)" required><br>
+        <button type="submit">Calculate SIP</button>
+    </form>
+
+    {% if result %}
+    <div class="investment-result">
+        <h4>Result for {{ result.symbol }}</h4>
+        <p><strong>Total Investment:</strong> ₹{{ result.total }}</p>
+        <p><strong>Expected Value:</strong> ₹{{ result.final }}</p>
+    </div>
+
+    <canvas id="sipChart" width="600" height="300" style="margin: 20px auto; display: block;"></canvas>
+
+    <script>
+        const ctx = document.getElementById('sipChart').getContext('2d');
+        const data = {
+            labels: {{ result.labels | tojson }},
+            datasets: [{
+                label: '📈 Projected SIP Growth (₹)',
+                data: {{ result.data | tojson }},
+                backgroundColor: 'rgba(0, 229, 255, 0.2)',
+                borderColor: '#00e5ff',
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#00e5ff',
+                pointRadius: 5,
+                tension: 0.4,
+                fill: true
+            }]
+        };
+
+        const options = {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff',
+                        font: { size: 14, weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e1e1e',
+                    titleColor: '#00e5ff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#00e5ff',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Year',
+                        color: '#ffffff'
+                    },
+                    ticks: { color: '#ffffff' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Value (₹)',
+                        color: '#ffffff'
+                    },
+                    ticks: { color: '#ffffff' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        };
+
+        new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: options
+        });
+    </script>
+    {% endif %}
+</body>
+</html>
