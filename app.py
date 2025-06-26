@@ -36,26 +36,45 @@ def init_stock_db():
     conn.close()
 
 def update_top10_stocks():
-    symbols = ["TCS.NS", "INFY.NS", "RELIANCE.NS", "HDFCBANK.NS", "ICICIBANK.NS",
-               "ITC.NS", "LT.NS", "HINDUNILVR.NS", "SBIN.NS", "KOTAKBANK.NS"]
+    def update_top10_stocks():
+    symbols = {
+        "TCS.NS": "TCS",
+        "INFY.NS": "INFOSYS LIMITED",
+        "RELIANCE.NS": "RELIANCE",
+        "HDFCBANK.NS": "HDFC BANK",
+        "ICICIBANK.NS": "ICICI BANK",
+        "ITC.NS": "ITC LTD",
+        "LT.NS": "L&T",
+        "HINDUNILVR.NS": "HINDUSTAN UNILEVER",
+        "SBIN.NS": "SBI",
+        "KOTAKBANK.NS": "KOTAK BANK"
+    }
+
     stocks_data = []
-    for symbol in symbols:
+
+    for symbol, name in symbols.items():
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            roi = info.get("returnOnEquity", 0) * 100
+            data = yf.download(symbol, period="6mo", interval="1d", progress=False)
+            if data.empty:
+                continue
+            start_price = data['Close'][0]
+            end_price = data['Close'][-1]
+            roi = ((end_price - start_price) / start_price) * 100
+
             stocks_data.append({
                 "symbol": symbol.replace(".NS", ""),
-                "name": info.get("shortName", symbol),
-                "price": info.get("currentPrice", 0),
-                "sector": info.get("sector", "N/A"),
-                "market_cap": info.get("marketCap", 0),
+                "name": name,
+                "price": round(end_price, 2),
+                "sector": "N/A",  # Optional: you can remove or hardcode
+                "market_cap": "N/A",
                 "roi": round(roi, 2),
-                "pe_ratio": info.get("trailingPE", 0)
+                "pe_ratio": 0
             })
-        except:
+        except Exception as e:
+            print(f"Error fetching {symbol}: {e}")
             continue
 
+    # Sort and save top 10
     top10 = sorted(stocks_data, key=lambda x: x['roi'], reverse=True)[:10]
 
     conn = sqlite3.connect('top_stocks.db')
