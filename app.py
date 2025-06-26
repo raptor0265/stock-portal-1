@@ -36,7 +36,6 @@ def init_stock_db():
     conn.close()
 
 def update_top10_stocks():
-    def update_top10_stocks():
     symbols = {
         "TCS.NS": "TCS",
         "INFY.NS": "INFOSYS LIMITED",
@@ -65,7 +64,7 @@ def update_top10_stocks():
                 "symbol": symbol.replace(".NS", ""),
                 "name": name,
                 "price": round(end_price, 2),
-                "sector": "N/A",  # Optional: you can remove or hardcode
+                "sector": "N/A",
                 "market_cap": "N/A",
                 "roi": round(roi, 2),
                 "pe_ratio": 0
@@ -185,6 +184,7 @@ def calculate():
 
     return render_template('dashboard.html', username=session['username'], stocks=stocks,
                            investment={'symbol': symbol, 'amount': amount, 'growth': growth})
+
 @app.route('/sip', methods=['GET', 'POST'])
 def sip():
     conn = sqlite3.connect('top_stocks.db')
@@ -226,7 +226,10 @@ def sip():
 # Initialize DBs and auto-refresh top 10 stocks
 init_user_db()
 init_stock_db()
-update_top10_stocks()  # <-- this auto-refreshes top stocks on startup
+update_top10_stocks()  # auto-refresh top stocks on startup
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # For deployment, you might want to bind to 0.0.0.0 and port from env var
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
