@@ -1,15 +1,23 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import yfinance as yf
+import os
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 # -------------------------------
+# Absolute DB paths
+# -------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_DB = os.path.join(BASE_DIR, 'users.db')
+STOCK_DB = os.path.join(BASE_DIR, 'top_stocks.db')
+
+# -------------------------------
 # INIT DBs
 # -------------------------------
 def init_user_db():
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(USER_DB)
     cur = conn.cursor()
     cur.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +28,7 @@ def init_user_db():
     conn.close()
 
 def init_stock_db():
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute('''CREATE TABLE IF NOT EXISTS top10 (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,47 +44,29 @@ def init_stock_db():
     conn.close()
 
 def update_top10_stocks():
-    symbols = {
-        "TCS.NS": "TCS",
-        "INFY.NS": "INFOSYS LIMITED",
-        "RELIANCE.NS": "RELIANCE",
-        "HDFCBANK.NS": "HDFC BANK",
-        "ICICIBANK.NS": "ICICI BANK",
-        "ITC.NS": "ITC LTD",
-        "LT.NS": "L&T",
-        "HINDUNILVR.NS": "HINDUSTAN UNILEVER",
-        "SBIN.NS": "SBI",
-        "KOTAKBANK.NS": "KOTAK BANK"
-    }
-
+    symbols = ["TCS.NS", "INFY.NS", "RELIANCE.NS", "HDFCBANK.NS", "ICICIBANK.NS",
+               "ITC.NS", "LT.NS", "HINDUNILVR.NS", "SBIN.NS", "KOTAKBANK.NS"]
     stocks_data = []
-
-    for symbol, name in symbols.items():
+    for symbol in symbols:
         try:
-            data = yf.download(symbol, period="6mo", interval="1d", progress=False)
-            if data.empty:
-                continue
-            start_price = data['Close'][0]
-            end_price = data['Close'][-1]
-            roi = ((end_price - start_price) / start_price) * 100
-
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            roi = info.get("returnOnEquity", 0) * 100
             stocks_data.append({
                 "symbol": symbol.replace(".NS", ""),
-                "name": name,
-                "price": round(end_price, 2),
-                "sector": "N/A",
-                "market_cap": "N/A",
+                "name": info.get("shortName", symbol),
+                "price": info.get("currentPrice", 0),
+                "sector": info.get("sector", "N/A"),
+                "market_cap": info.get("marketCap", 0),
                 "roi": round(roi, 2),
-                "pe_ratio": 0
+                "pe_ratio": info.get("trailingPE", 0)
             })
-        except Exception as e:
-            print(f"Error fetching {symbol}: {e}")
+        except:
             continue
 
-    # Sort and save top 10
     top10 = sorted(stocks_data, key=lambda x: x['roi'], reverse=True)[:10]
 
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute("DELETE FROM top10")
     for s in top10:
@@ -98,7 +88,7 @@ def register():
     if request.method == 'POST':
         u = request.form['username']
         p = request.form['password']
-        conn = sqlite3.connect('users.db')
+        conn = sqlite3.connect(USER_DB)
         try:
             conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (u, p))
             conn.commit()
@@ -112,7 +102,7 @@ def login():
     if request.method == 'POST':
         u = request.form['username']
         p = request.form['password']
-        conn = sqlite3.connect('users.db')
+        conn = sqlite3.connect(USER_DB)
         cur = conn.cursor()
         cur.execute("SELECT * FROM users WHERE username=? AND password=?", (u, p))
         if cur.fetchone():
@@ -131,7 +121,7 @@ def dashboard():
     if 'username' not in session:
         return redirect('/login')
 
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute("SELECT * FROM top10")
     rows = cur.fetchall()
@@ -155,7 +145,7 @@ def calculate():
     symbol = request.form['symbol']
     amount = float(request.form['amount'])
 
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute("SELECT roi FROM top10 WHERE symbol=?", (symbol,))
     row = cur.fetchone()
@@ -170,7 +160,7 @@ def calculate():
         future = round(amount * ((1 + roi) ** year), 2)
         growth[year] = future
 
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute("SELECT * FROM top10")
     rows = cur.fetchall()
@@ -187,7 +177,7 @@ def calculate():
 
 @app.route('/sip', methods=['GET', 'POST'])
 def sip():
-    conn = sqlite3.connect('top_stocks.db')
+    conn = sqlite3.connect(STOCK_DB)
     cur = conn.cursor()
     cur.execute("SELECT * FROM top10")
     rows = cur.fetchall()
@@ -223,13 +213,10 @@ def sip():
 
     return render_template('sip.html', stocks=stocks)
 
-# Initialize DBs and auto-refresh top 10 stocks
+# Initialize DBs and update on server restart (optional)
 init_user_db()
 init_stock_db()
-update_top10_stocks()  # auto-refresh top stocks on startup
+update_top10_stocks()  # <- Uncomment if you want to update on server restart
 
 if __name__ == '__main__':
-    # For deployment, you might want to bind to 0.0.0.0 and port from env var
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(debug=True)
